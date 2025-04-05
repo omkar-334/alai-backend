@@ -48,7 +48,8 @@ class Creator:
         if not slide_index:
             slide_index = len(self.slides)
 
-        self.slides[slide_index] = str(uuid4())
+        self.slides.insert(slide_index, str(uuid4()))
+        # self.slides[slide_index] = str(uuid4())
 
         url = "https://alai-standalone-backend.getalai.com/create-new-slide"
         payload = {
