@@ -1,3 +1,5 @@
+from enum import Enum
+
 from models import ResponseModel
 
 
@@ -23,3 +25,11 @@ def safe(response) -> ResponseModel:
             status_code=response.status_code,
             json=False,
         )
+
+
+def create_themes_enum(data, enum_name="Theme"):
+    enum_dict = {item["display_name"]: item["id"] for item in data}
+    enum = Enum(enum_name, enum_dict)
+    for theme in enum:
+        print(theme.name.replace(" ", "_"), "=", f'"{theme.value}"')
+    return enum

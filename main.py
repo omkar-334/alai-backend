@@ -5,14 +5,20 @@ from uuid import uuid4
 import requests
 from dotenv import load_dotenv
 
-from models import Tone, Verbosity
+from models import Theme, Tone, Verbosity
 from utils import create_headers, safe
 
 load_dotenv()
 
 
 class Creator:
-    def __init__(self, ppt_name="Untitled Presentation"):
+    def __init__(self, ppt_id=None, ppt_name=None):
+        if ppt_id:
+            self.ppt_id = ppt_id
+        else:
+            self.ppt_id = str(uuid4())
+            self.ppt_name = "Untitled Presentation"
+
         self.token = os.getenv("TOKEN")
         self.base_url = "https://alai-standalone-backend.getalai.com"
         self.headers = create_headers(self.token)
@@ -22,11 +28,13 @@ class Creator:
         with open("alai_docs.json", encoding="utf-8") as f:
             self.docs = json.load(f)
 
+    # Helper
     def get_doc_for_function(self, func):
         func_name = func.__name__.replace("_", "-")
         endpoint_key = f"/{func_name}"
         return self.docs["paths"].get(endpoint_key, f"No docs found for endpoint '{endpoint_key}'")
 
+    # Helper
     def get_alai_docs(self):
         url = f"{self.base_url}/openapi.json"
 
@@ -39,19 +47,25 @@ class Creator:
 
         return safe(response)
 
-    def get_themes(self):
-        url = f"{self.base_url}/get-themes"
-        response = requests.get(url, headers=self.headers)
+    def get_presentations_list(self):
+        url = f"{self.base_url}/get-presentations-list"
+        payload = {"url_token": None}
+        response = requests.get(url, headers=self.headers, json=payload)
         return safe(response)
 
-    def create_new_presentation(self, first_slide=False):
+    def get_themes(self):
+        url = f"{self.base_url}/get-themes"
+        response = requests.post(url, headers=self.headers)
+        return safe(response)
+
+    def create_new_presentation(self, first_slide=False, theme: Theme = Theme.Figment):
         url = f"{self.base_url}/create-new-presentation"
 
         payload = {
             "presentation_id": self.ppt_id,
             "presentation_title": self.ppt_name,
             "create_first_slide": first_slide,
-            "theme_id": "a6bff6e5-3afc-4336-830b-fbc710081012",
+            "theme_id": theme.value,
             "default_color_set_id": 0,
         }
 
@@ -101,7 +115,7 @@ class Creator:
         payload = {
             "presentation_id": self.ppt_id,
             "original_text": text,
-            "tone_type": tone,
+            "tone_type": tone.value,
             "tone_instructions": tone_instr,
         }
 
@@ -119,7 +133,7 @@ class Creator:
             "presentation_id": self.ppt_id,
             "original_text": text,
             "verbosity_level": verbosity,
-            "previous_verbosity_level": verbosity,
+            "previous_verbosity_level": verbosity.value,
             "tone_type": "PROFESSIONAL",
             "tone_instructions": verbosity_instr,
         }
