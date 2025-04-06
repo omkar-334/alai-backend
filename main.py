@@ -1,3 +1,4 @@
+import json
 import os
 from uuid import uuid4
 
@@ -13,13 +14,21 @@ load_dotenv()
 class Creator:
     def __init__(self, ppt_name="Untitled Presentation"):
         self.token = os.getenv("TOKEN")
+        self.base_url = "https://alai-standalone-backend.getalai.com"
         self.headers = create_headers(self.token)
         self.ppt_id = str(uuid4())
         self.ppt_name = ppt_name
         self.slides = []
+        with open("alai_docs.json", encoding="utf-8") as f:
+            self.docs = json.load(f)
+
+    def get_doc_for_function(self, func):
+        func_name = func.__name__.replace("_", "-")
+        endpoint_key = f"/{func_name}"
+        return self.docs["paths"].get(endpoint_key, f"No docs found for endpoint '{endpoint_key}'")
 
     def get_alai_docs(self):
-        url = "https://alai-standalone-backend.getalai.com/openapi.json"
+        url = f"{self.base_url}/openapi.json"
 
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
@@ -30,13 +39,18 @@ class Creator:
 
         return safe(response)
 
-    def create_new_ppt(self):
-        url = "https://alai-standalone-backend.getalai.com/create-new-presentation"
+    def get_themes(self):
+        url = f"{self.base_url}/get-themes"
+        response = requests.get(url, headers=self.headers)
+        return safe(response)
+
+    def create_new_presentation(self, first_slide=False):
+        url = f"{self.base_url}/create-new-presentation"
 
         payload = {
             "presentation_id": self.ppt_id,
             "presentation_title": self.ppt_name,
-            "create_first_slide": False,
+            "create_first_slide": first_slide,
             "theme_id": "a6bff6e5-3afc-4336-830b-fbc710081012",
             "default_color_set_id": 0,
         }
@@ -51,7 +65,7 @@ class Creator:
         self.slides.insert(slide_index, str(uuid4()))
         # self.slides[slide_index] = str(uuid4())
 
-        url = "https://alai-standalone-backend.getalai.com/create-new-slide"
+        url = f"{self.base_url}/create-new-slide"
         payload = {
             "slide_id": self.slides[slide_index],
             "presentation_id": self.ppt_id,
@@ -62,13 +76,13 @@ class Creator:
         response = requests.post(url, headers=self.headers, json=payload)
         return safe(response)
 
-    def get_ppt_questions(self):
-        url = f"https://alai-standalone-backend.getalai.com/get-presentation-questions/{self.ppt_id}"
+    def get_presentation_questions(self):
+        url = f"{self.base_url}/get-presentation-questions/{self.ppt_id}"
         response = requests.get(url, headers=self.headers)
         return safe(response)
 
-    def upload_images(self, paths: list[str]):
-        url = "https://alai-standalone-backend.getalai.com/upload-images-for-slide-generation"
+    def upload_images_for_slide_generation(self, paths: list[str]):
+        url = f"{self.base_url}/upload-images-for-slide-generation"
 
         files = [("files", (os.path.basename(path), open(path, "rb"), f"image/{path.split('.')[-1]}")) for path in paths]
         data = {"upload_input": {"presentation_id": self.ppt_id}}
@@ -82,7 +96,7 @@ class Creator:
         tone: Tone = Tone.DEFAULT,
         tone_instr: str = None,
     ):
-        url = "https://alai-standalone-backend.getalai.com/calibrate-tone"
+        url = f"{self.base_url}/calibrate-tone"
 
         payload = {
             "presentation_id": self.ppt_id,
@@ -100,7 +114,7 @@ class Creator:
         verbosity: Verbosity = Verbosity.MEDIUM,
         verbosity_instr: str = None,
     ):
-        url = "https://alai-standalone-backend.getalai.com/calibrate-verbosity"
+        url = f"{self.base_url}/calibrate-verbosity"
         payload = {
             "presentation_id": self.ppt_id,
             "original_text": text,
