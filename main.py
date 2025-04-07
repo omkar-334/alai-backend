@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from login import refresh_token
 from models import Theme, Tone, Verbosity
+from sockets import create_variants
 from utils import create_headers, is_notebook, safe
 
 load_dotenv()
@@ -14,21 +15,23 @@ load_dotenv()
 
 class Creator:
     def __init__(self, ppt_id=None, ppt_name=None):
-        if ppt_id:
-            self.ppt_id = ppt_id
-        else:
-            self.ppt_id = str(uuid4())
-            self.ppt_name = ppt_name or "Untitled Presentation"
-
         if is_notebook():
             self.token = os.getenv("TOKEN")
         else:
             self.token = refresh_token()
+
         self.base_url = "https://alai-standalone-backend.getalai.com"
         self.headers = create_headers(self.token)
         self.slides = []
         with open("alai_docs.json", encoding="utf-8") as f:
             self.docs = json.load(f)
+
+        if ppt_id:
+            self.ppt_id = ppt_id
+            self.ppt = self.get_presentation(ppt_id)
+        else:
+            self.ppt_id = str(uuid4())
+            self.ppt_name = ppt_name or "Untitled Presentation"
 
     # Helper
     def get_doc_for_function(self, func):
@@ -47,6 +50,13 @@ class Creator:
         else:
             print(f"Failed to fetch OpenAPI schema: {response.status_code}")
 
+        return safe(response)
+
+    def get_presentation(self, ppt_id=None):
+        if not ppt_id:
+            ppt_id = self.ppt_id
+        url = f"{self.base_url}/get-presentation/{ppt_id}"
+        response = requests.get(url, headers=self.headers)
         return safe(response)
 
     def get_presentations_list(self):
@@ -146,3 +156,28 @@ class Creator:
         }
         response = requests.post(url, headers=self.headers, json=payload)
         return safe(response)
+
+    def set_active_variant(self, slide_id: str, variant_id: str):
+        url = f"{self.base_url}/set-active-variant"
+        payload = {"slide_id": slide_id, "variant_id": variant_id}
+        response = requests.post(url, headers=self.headers, json=payload)
+        return safe(response)
+
+    def make_full_slide(
+        self,
+        instructions,
+        content,
+        images=[],
+        tone=Tone.DEFAULT,
+        tone_instr=None,
+        verbosity=Verbosity.MEDIUM,
+        verbosity_instr=None,
+    ):
+        slide = self.create_new_slide()
+        self.upload_images_for_slide_generation(images)
+        t = self.calibrate_tone(content, tone, tone_instr)
+        v = self.calibrate_verbosity(content, verbosity, verbosity_instr)
+        create_variants(self.ppt_id, self.slides[-1], instructions, content, images)
+        self.ppt = self.get_presentation(self.ppt_id)
+        active_variant_id = None
+        self.set_active_variant(self.slides[-1], active_variant_id)
