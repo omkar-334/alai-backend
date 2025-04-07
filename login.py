@@ -2,7 +2,9 @@ import asyncio
 import os
 import sys
 import time
+from datetime import datetime
 
+import jwt
 from dotenv import load_dotenv, set_key
 from playwright.async_api import async_playwright
 
@@ -23,15 +25,14 @@ async def refresh_token():
 
 
 def is_token_expired():
-    token_timestamp = os.getenv("TOKEN_TIMESTAMP")
-    if not token_timestamp:
-        return True
+    token = os.getenv("TOKEN")
+    decoded_time = jwt.decode(token, options={"verify_signature": False})["exp"]
+    expiry = datetime.fromtimestamp(decoded_time)
+    print("Token expires at:", expiry)
 
-    timestamp = int(token_timestamp)
     current_time = int(time.time())
-    elapsed_minutes = (current_time - timestamp) / 60
 
-    return elapsed_minutes > 15
+    return current_time > decoded_time
 
 
 async def login_and_get_token():
