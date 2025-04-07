@@ -12,7 +12,7 @@ def create_variants(ppt_id, slide_id, instructions, context, images: list = [], 
     print("Creating variants...")
 
     def on_message(ws, message):
-        print("Received message:")
+        # print("Received message:")
         # print(message)
         received_messages.append(message)
 

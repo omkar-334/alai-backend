@@ -17,7 +17,7 @@ def main(url, num_slides=4, title=None):
     data = format_src(src, url)
     print("Formatted data")
 
-    # with open("scraped_data.json", encoding="utf-8") as f:
+    # with open("data/scraped_data.json", encoding="utf-8") as f:
     #     data = json.load(f)
 
     title = llm(title_prompt, data["content"])
@@ -45,7 +45,7 @@ def main(url, num_slides=4, title=None):
     data["images"] = new_images
     # # data["other_images"] = data["images"][5:]
 
-    with open("final_data.json", "w", encoding="utf-8") as f:
+    with open("data/final_data.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
     final_slides = []
@@ -65,3 +65,6 @@ if __name__ == "__main__":
     load_dotenv()
 
     url = "https://www.theverge.com/news/622380/lenovo-thinkbook-flip-concept-laptop-foldable-mwc"
+
+    ppt_link = main(url, num_slides=4)
+    print(f"Presentation link: {ppt_link}")

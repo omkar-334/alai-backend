@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from uuid import uuid4
@@ -19,7 +20,7 @@ class Creator:
         if is_notebook():
             self.token = os.getenv("TOKEN")
         else:
-            self.token = refresh_token()
+            self.token = asyncio.run(refresh_token())
 
         self.base_url = "https://alai-standalone-backend.getalai.com"
         self.headers = create_headers(self.token)
@@ -189,9 +190,9 @@ class Creator:
 
         # t = self.calibrate_tone(content, tone, tone_instr)
         # v = self.calibrate_verbosity(content, verbosity, verbosity_instr)
-        for slide in slides:
+        for i, slide in enumerate(slides):
             self.create_new_slide()
-            print("Created new slide...")
+            print(f"----- Created slide {i}...")
             content, instruction = prepare_slide(slide)
             create_variants(self.ppt_id, self.slides[-1], instruction, content, [])
             print("Created variants...")
