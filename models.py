@@ -2,6 +2,50 @@ from __future__ import annotations
 
 from enum import Enum
 
+from pydantic import BaseModel
+
+
+def to_string(slide) -> str:
+    return f"title: {slide.title}\ncontent: {slide.content}\ninstruction: {slide.instruction}\n image_description: {slide.image_description}"
+
+
+def slides_to_string(slides: list[Slide]) -> str:
+    return "\n".join(to_string(slide) for slide in slides)
+
+
+def prepare_slide(slide):
+    content = f"title: {slide.title}\ncontent: {slide.content}\n image_description: {slide.image_description}"
+    instruction = slide.instruction
+    return content, instruction
+
+
+class Slide(BaseModel):
+    title: str
+    content: str
+    instruction: str | None = None
+    # image_url: str | None = None
+
+
+class SlideWithImage(BaseModel):
+    title: str
+    content: str
+    instruction: str | None = None
+    image_url: str | None = None
+    image_description: str | None = None
+
+
+class Presentation(BaseModel):
+    slides: list[Slide]
+    title: str | None = None
+    calibrate: Calibrate | None = None
+
+
+class Calibrate(BaseModel):
+    tone: Tone | None = None
+    tone_instruction: str | None = None
+    verbosity: Verbosity | None = None
+    verbosity_instruction: str | None = None
+
 
 class Tone(str, Enum):
     DEFAULT = "DEFAULT"

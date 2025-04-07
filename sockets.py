@@ -13,7 +13,7 @@ def create_variants(ppt_id, slide_id, instructions, context, images: list = [], 
 
     def on_message(ws, message):
         print("Received message:")
-        print(message)
+        # print(message)
         received_messages.append(message)
 
     def on_error(ws, error):
@@ -21,9 +21,9 @@ def create_variants(ppt_id, slide_id, instructions, context, images: list = [], 
 
     def on_close(ws, close_status_code, close_msg):
         print("Connection closed:", close_status_code, close_msg)
-        print("\nAll received messages:")
-        for i, msg in enumerate(received_messages, 1):
-            print(f"[{i}] {msg}")
+        # print("\nAll received messages:")
+        # for i, msg in enumerate(received_messages, 1):
+        #     print(f"[{i}] {msg}")
 
     def on_open(ws):
         payload = {
