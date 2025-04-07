@@ -2,8 +2,6 @@ from enum import Enum
 
 from IPython import get_ipython
 
-from models import ResponseModel
-
 
 def is_notebook():
     try:
@@ -24,19 +22,11 @@ def create_headers(token, content_type="application/json"):
     return headers
 
 
-def safe(response) -> ResponseModel:
+def safe(response):
     try:
-        return ResponseModel(
-            response=response.json(),
-            status_code=response.status_code,
-            json=True,
-        )
+        return response.json()
     except ValueError:
-        return ResponseModel(
-            response=response.text,
-            status_code=response.status_code,
-            json=False,
-        )
+        return response.content
 
 
 def create_themes_enum(data, enum_name="Theme"):

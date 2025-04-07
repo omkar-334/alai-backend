@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel
-
 
 class Tone(str, Enum):
     DEFAULT = "DEFAULT"
@@ -25,12 +23,6 @@ class Verbosity(int, Enum):
     MEDIUM = 3
     MEDIUM_HIGH = 4
     HIGH = 5
-
-
-class ResponseModel(BaseModel):
-    response: str | dict | list[dict]
-    json: bool
-    status_code: int
 
 
 class Theme(str, Enum):
