@@ -3,13 +3,15 @@ from enum import Enum
 from models import ResponseModel
 
 
-def create_headers(token):
-    return {
+def create_headers(token, content_type="application/json"):
+    headers = {
         "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
         "Origin": "https://app.getalai.com",
         "Referer": "https://app.getalai.com/",
     }
+    if content_type is not False:
+        headers["Content-Type"] = content_type
+    return headers
 
 
 def safe(response) -> ResponseModel:

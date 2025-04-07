@@ -5,6 +5,7 @@ from uuid import uuid4
 import requests
 from dotenv import load_dotenv
 
+from login import refresh_token
 from models import Theme, Tone, Verbosity
 from utils import create_headers, safe
 
@@ -17,13 +18,11 @@ class Creator:
             self.ppt_id = ppt_id
         else:
             self.ppt_id = str(uuid4())
-            self.ppt_name = "Untitled Presentation"
+            self.ppt_name = ppt_name or "Untitled Presentation"
 
-        self.token = os.getenv("TOKEN")
+        self.token = refresh_token()
         self.base_url = "https://alai-standalone-backend.getalai.com"
         self.headers = create_headers(self.token)
-        self.ppt_id = str(uuid4())
-        self.ppt_name = ppt_name
         self.slides = []
         with open("alai_docs.json", encoding="utf-8") as f:
             self.docs = json.load(f)
@@ -97,11 +96,16 @@ class Creator:
 
     def upload_images_for_slide_generation(self, paths: list[str]):
         url = f"{self.base_url}/upload-images-for-slide-generation"
+        headers = create_headers(self.token, content_type=False)
 
-        files = [("files", (os.path.basename(path), open(path, "rb"), f"image/{path.split('.')[-1]}")) for path in paths]
-        data = {"upload_input": {"presentation_id": self.ppt_id}}
+        files = []
 
-        response = requests.post(url, files=files, data=data)
+        for path in paths:
+            files.append(("files", (os.path.basename(path), open(path, "rb"), f"image/{path.split('.')[-1]}")))
+        # payload = {"upload_input": {"presentation_id": self.ppt_id}}
+        payload = {"upload_input": json.dumps({"presentation_id": self.ppt_id})}
+
+        response = requests.post(url, files=files, data=payload, headers=headers)
         return safe(response)
 
     def calibrate_tone(
