@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from login import refresh_token
 from models import Theme, Tone, Verbosity
-from utils import create_headers, safe
+from utils import create_headers, is_notebook, safe
 
 load_dotenv()
 
@@ -20,7 +20,10 @@ class Creator:
             self.ppt_id = str(uuid4())
             self.ppt_name = ppt_name or "Untitled Presentation"
 
-        self.token = refresh_token()
+        if is_notebook():
+            self.token = os.getenv("TOKEN")
+        else:
+            self.token = refresh_token()
         self.base_url = "https://alai-standalone-backend.getalai.com"
         self.headers = create_headers(self.token)
         self.slides = []

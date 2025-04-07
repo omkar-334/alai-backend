@@ -1,9 +1,10 @@
+import asyncio
 import os
 import sys
 import time
 
 from dotenv import load_dotenv, set_key
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 
 ENV_PATH = ".env"
 load_dotenv(ENV_PATH)
@@ -12,10 +13,11 @@ EMAIL = os.getenv("EMAIL")
 PASSWORD = os.getenv("PASSWORD")
 
 
-def refresh_token():
+async def refresh_token():
     token = os.getenv("TOKEN")
     if not token or is_token_expired():
-        login_and_get_token()
+        print("Token expired or not found. Logging in...")
+        await login_and_get_token()
     token = os.getenv("TOKEN")
     return token
 
@@ -32,12 +34,12 @@ def is_token_expired():
     return elapsed_minutes > 15
 
 
-def login_and_get_token():
+async def login_and_get_token():
     token_found = None
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True, devtools=True)
+        context = await browser.new_context()
 
         def handle_request(request):
             nonlocal token_found
@@ -51,36 +53,36 @@ def login_and_get_token():
                     token = auth.split("Bearer ")[1]
                     token_found = token
                     set_key(ENV_PATH, "TOKEN", token)
-                    set_key(ENV_PATH, "TOKEN_TIMESTAMP", int(time.time()))
+                    set_key(ENV_PATH, "TOKEN_TIMESTAMP", str(int(time.time())))
                     print("Token saved to .env")
                     sys.exit(0)
 
         context.on("request", handle_request)
 
-        page = context.new_page()
-        page.goto("https://app.getalai.com/home")
+        page = await context.new_page()
+        await page.goto("https://app.getalai.com/home")
 
-        page.click("a:has-text('Already have an account? Sign in')")
+        await page.click("a:has-text('Already have an account? Sign in')")
 
         email_selector = 'input[type="email"]'
-        page.wait_for_selector(email_selector, timeout=15000)
-        page.fill(email_selector, EMAIL)
+        await page.wait_for_selector(email_selector, timeout=15000)
+        await page.fill(email_selector, EMAIL)
 
         password_selector = "input[type='password']"
-        page.wait_for_selector(password_selector, timeout=15000)
-        page.fill(password_selector, PASSWORD)
+        await page.wait_for_selector(password_selector, timeout=15000)
+        await page.fill(password_selector, PASSWORD)
 
-        page.click("button[type='submit']")
+        await page.click("button[type='submit']")
 
-        wait_time = 100
+        wait_time = 300
         if not token_found:
             print(f"Token not found. Waiting for {wait_time} seconds...")
             end_time = time.time() + wait_time
             while not token_found and time.time() < end_time:
-                time.sleep(1)
+                await asyncio.sleep(1)
 
-        browser.close()
+        await browser.close()
 
 
 if __name__ == "__main__":
-    login_and_get_token()
+    asyncio.run(refresh_token())

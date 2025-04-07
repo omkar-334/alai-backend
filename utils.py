@@ -1,6 +1,16 @@
 from enum import Enum
 
+from IPython import get_ipython
+
 from models import ResponseModel
+
+
+def is_notebook():
+    try:
+        shell = get_ipython().__class__.__name__
+        return shell == "ZMQInteractiveShell"
+    except NameError:
+        return False
 
 
 def create_headers(token, content_type="application/json"):
